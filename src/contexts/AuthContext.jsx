@@ -39,13 +39,15 @@ export function AuthProvider({ children }) {
   // Restore session on mount
   useEffect(() => {
     if (supabase) {
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        if (session) {
-          setUser(sessionToBase(session))
-          enrichFromDB(session.user.id, setUser)
-        }
-        setLoading(false)
-      })
+      supabase.auth.getSession()
+        .then(({ data: { session } }) => {
+          if (session) {
+            setUser(sessionToBase(session))
+            enrichFromDB(session.user.id, setUser)
+          }
+        })
+        .catch(err => console.error('[AuthContext] getSession error:', err))
+        .finally(() => setLoading(false))
       const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
         if (!session) { setUser(null); return }
         setUser(sessionToBase(session))
