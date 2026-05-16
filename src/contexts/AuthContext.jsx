@@ -43,7 +43,7 @@ export function AuthProvider({ children }) {
         .then(({ data: { session } }) => {
           if (session) {
             setUser(sessionToBase(session))
-            enrichFromDB(session.user.id, setUser)
+            enrichFromDB(session.user.id, setUser, session.user.email)
           }
         })
         .catch(err => console.error('[AuthContext] getSession error:', err))
@@ -51,7 +51,7 @@ export function AuthProvider({ children }) {
       const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
         if (!session) { setUser(null); return }
         setUser(sessionToBase(session))
-        enrichFromDB(session.user.id, setUser)
+        enrichFromDB(session.user.id, setUser, session.user.email)
       })
       return () => subscription.unsubscribe()
     } else {
@@ -71,7 +71,7 @@ export function AuthProvider({ children }) {
         const { data, error: err } = await supabase.auth.signInWithPassword({ email, password })
         if (err) throw err
         const base = sessionToBase(data.session)
-        enrichFromDB(data.session.user.id, setUser)
+        enrichFromDB(data.session.user.id, setUser, data.session.user.email)
         return base
       } else {
         // Mock auth
@@ -137,12 +137,13 @@ function sessionToBase(session) {
 }
 
 // Enriches user with rol + clinica_id from usuarios table (fire-and-forget)
-function enrichFromDB(userId, setUser) {
-  supabase
-    .from('usuarios')
-    .select('rol, clinica_id, nombre')
-    .eq('id', userId)
-    .single()
+// Queries by email (more reliable than id when seed UUIDs differ from auth.uid)
+function enrichFromDB(userId, setUser, email) {
+  const query = email
+    ? supabase.from('usuarios').select('rol, clinica_id, nombre').eq('email', email).single()
+    : supabase.from('usuarios').select('rol, clinica_id, nombre').eq('id', userId).single()
+
+  query
     .then(({ data }) => {
       if (!data) return
       setUser(prev => prev ? {
