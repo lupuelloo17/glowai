@@ -6,6 +6,7 @@ import FeatureGate from '../../components/FeatureGate'
 import ClinicLayout from './ClinicLayout'
 import PACIENTES, { SESIONES_DB, ANALISIS_DB } from '../../data/pacientes'
 import { supabase } from '../../lib/supabase'
+import NuevaSesionDrawer from '../../components/NuevaSesionDrawer'
 
 const RIESGO_STYLE = {
   bajo:     { bg: '#dcfce7', text: '#15803d' },
@@ -27,6 +28,7 @@ export default function PacienteDetallePage() {
   const [sesiones, setSesiones] = useState([])
   const [analisis, setAnalisis] = useState([])
   const [cargando, setCargando] = useState(true)
+  const [nuevaSesionAbierta, setNuevaSesionAbierta] = useState(false)
 
   useEffect(() => {
     // ── BUG FIX A: reset state immediately when id changes ───────────
@@ -311,7 +313,11 @@ export default function PacienteDetallePage() {
                   <p className="text-gray-600 text-xs leading-relaxed">{s.nota}</p>
                 </div>
               ))}
-              <button className="w-full bg-white border border-dashed border-gray-200 text-xs font-medium text-gray-400 py-3 rounded-2xl">
+              <button
+                onClick={() => setNuevaSesionAbierta(true)}
+                className="w-full bg-white border border-dashed text-xs font-semibold py-3 rounded-2xl transition-colors active:scale-[0.99]"
+                style={{ borderColor: brand, color: brand }}
+              >
                 + Nueva sesión
               </button>
             </div>
@@ -367,6 +373,18 @@ export default function PacienteDetallePage() {
           )}
         </div>
       </div>
+
+      {nuevaSesionAbierta && (
+        <NuevaSesionDrawer
+          pacienteId={id}
+          onClose={() => setNuevaSesionAbierta(false)}
+          onGuardado={(nueva) => {
+            // Añade la sesión al principio (más reciente primero) y cambia a la pestaña Sesiones
+            setSesiones(prev => [nueva, ...prev])
+            setTab(1)
+          }}
+        />
+      )}
     </ClinicLayout>
   )
 }
