@@ -39,12 +39,17 @@ export function AuthProvider({ children }) {
   // Restore session on mount
   useEffect(() => {
     if (supabase) {
-      supabase.auth.getSession().then(async ({ data: { session } }) => {
-        if (session) setUser(await buildUserFromSession(session))
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session) {
+          setUser(sessionToBase(session))
+          enrichFromDB(session.user.id, setUser)
+        }
         setLoading(false)
       })
-      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-        setUser(session ? await buildUserFromSession(session) : null)
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        if (!session) { setUser(null); return }
+        setUser(sessionToBase(session))
+        enrichFromDB(session.user.id, setUser)
       })
       return () => subscription.unsubscribe()
     } else {
@@ -63,7 +68,9 @@ export function AuthProvider({ children }) {
       if (supabase) {
         const { data, error: err } = await supabase.auth.signInWithPassword({ email, password })
         if (err) throw err
-        return await buildUserFromSession(data.session)
+        const base = sessionToBase(data.session)
+        enrichFromDB(data.session.user.id, setUser)
+        return base
       } else {
         // Mock auth
         const mock = MOCK_USERS[email.toLowerCase()]
@@ -113,9 +120,10 @@ export function useAuth() {
   return ctx
 }
 
-async function buildUserFromSession(session) {
+// Returns user object from session synchronously (no DB call)
+function sessionToBase(session) {
   const meta = session.user.app_metadata ?? {}
-  const base = {
+  return {
     id:           session.user.id,
     email:        session.user.email,
     rol:          meta.rol ?? 'medico',
@@ -124,20 +132,23 @@ async function buildUserFromSession(session) {
     nombre:       session.user.user_metadata?.nombre ?? session.user.email,
     foto:         session.user.user_metadata?.foto ?? null,
   }
+}
 
-  // Enrich with rol + clinica_id from usuarios table (overrides app_metadata if set)
-  try {
-    const { data } = await supabase
-      .from('usuarios')
-      .select('rol, clinica_id, nombre')
-      .eq('id', session.user.id)
-      .single()
-    if (data) {
-      base.rol        = data.rol        ?? base.rol
-      base.clinica_id = data.clinica_id ?? base.clinica_id
-      if (data.nombre) base.nombre = data.nombre
-    }
-  } catch { /* silent — use base values */ }
-
-  return base
+// Enriches user with rol + clinica_id from usuarios table (fire-and-forget)
+function enrichFromDB(userId, setUser) {
+  supabase
+    .from('usuarios')
+    .select('rol, clinica_id, nombre')
+    .eq('id', userId)
+    .single()
+    .then(({ data }) => {
+      if (!data) return
+      setUser(prev => prev ? {
+        ...prev,
+        rol:        data.rol        ?? prev.rol,
+        clinica_id: data.clinica_id ?? prev.clinica_id,
+        nombre:     data.nombre     ?? prev.nombre,
+      } : prev)
+    })
+    .catch(() => { /* silent */ })
 }
