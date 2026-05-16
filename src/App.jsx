@@ -29,6 +29,7 @@ import PacienteDetallePage      from './pages/clinica/PacienteDetallePage'
 import AnalisisClinicaPage      from './pages/clinica/AnalisisClinicaPage'
 import AgendaPage               from './pages/clinica/AgendaPage'
 import MisCitasPacientePage     from './pages/clinica/MisCitasPacientePage'
+import ConfiguracionPage        from './pages/clinica/ConfiguracionPage'
 
 // ── Protected route: redirects to /login if unauthenticated ──
 function RequireAuth({ children }) {
@@ -51,6 +52,7 @@ function ClinicRoutes() {
           <Route path="analisis"           element={<AnalisisClinicaPage />} />
           <Route path="agenda"             element={<AgendaPage />} />
           <Route path="mi-perfil/citas"    element={<MisCitasPacientePage />} />
+          <Route path="configuracion"      element={<ConfiguracionPage />} />
           <Route path="*"                  element={<Navigate to="dashboard" replace />} />
         </Routes>
       </CitasProvider>

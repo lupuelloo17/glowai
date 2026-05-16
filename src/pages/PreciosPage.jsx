@@ -136,7 +136,7 @@ export default function PreciosPage() {
                   <span className="text-4xl font-extrabold text-gray-900">
                     {formatEUR(plan.precio)}
                   </span>
-                  <span className="text-gray-400 text-sm">/mes</span>
+                  <span className="text-gray-400 text-sm">/mes + IVA</span>
                 </div>
                 <p className="text-gray-500 text-xs mb-1">{plan.descripcion}</p>
                 <p className="text-gray-400 text-[11px] mb-5">

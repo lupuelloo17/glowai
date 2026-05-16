@@ -111,8 +111,10 @@ export function ClinicProvider({ children }) {
     return plan?.features?.[key] === true
   }
 
+  function refreshClinica() { if (slug) loadClinica(slug) }
+
   return (
-    <ClinicContext.Provider value={{ clinica, plan, loading, error, hasFeature }}>
+    <ClinicContext.Provider value={{ clinica, setClinica, plan, loading, error, hasFeature, refreshClinica }}>
       {children}
     </ClinicContext.Provider>
   )

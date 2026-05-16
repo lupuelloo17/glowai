@@ -1,18 +1,23 @@
 import { useNavigate, useLocation, useParams } from 'react-router-dom'
-import { LayoutDashboard, Users, Microscope, CalendarDays } from 'lucide-react'
+import { LayoutDashboard, Users, Microscope, CalendarDays, Settings } from 'lucide-react'
 import { useClinic } from '../contexts/ClinicContext'
+import { useAuth } from '../contexts/AuthContext'
 
 export default function ClinicNav() {
   const navigate    = useNavigate()
   const { pathname } = useLocation()
   const { slug }    = useParams()
   const { clinica } = useClinic()
+  const { user }    = useAuth()
+
+  const isAdmin = user?.rol === 'admin' || user?.rol === 'admin_clinica'
 
   const TABS = [
     { label: 'Dashboard',  icon: LayoutDashboard, path: `/clinica/${slug}/dashboard` },
     { label: 'Pacientes',  icon: Users,            path: `/clinica/${slug}/pacientes` },
     { label: 'Análisis',   icon: Microscope,       path: `/clinica/${slug}/analisis`  },
     { label: 'Agenda',     icon: CalendarDays,     path: `/clinica/${slug}/agenda`    },
+    ...(isAdmin ? [{ label: 'Config',  icon: Settings, path: `/clinica/${slug}/configuracion` }] : []),
   ]
 
   const brand = clinica?.color_primario ?? '#E8A0B0'
