@@ -30,6 +30,32 @@ import AnalisisClinicaPage      from './pages/clinica/AnalisisClinicaPage'
 import AgendaPage               from './pages/clinica/AgendaPage'
 import MisCitasPacientePage     from './pages/clinica/MisCitasPacientePage'
 import ConfiguracionPage        from './pages/clinica/ConfiguracionPage'
+import MiPerfilPage             from './pages/clinica/MiPerfilPage'
+import MisAnalisisPage          from './pages/clinica/MisAnalisisPage'
+import ClinicLayout             from './pages/clinica/ClinicLayout'
+
+// Wrapper que renderiza DermoscopiaPage dentro del ClinicLayout del paciente.
+// Así el paciente ve el bottom nav del portal (Inicio/Análisis/Citas/Datos)
+// y no la BottomNav legacy de la app antigua.
+function DermoscopiaWrapper() {
+  return (
+    <ClinicLayout>
+      <DermoscopiaPage embedded />
+    </ClinicLayout>
+  )
+}
+
+// /dermoscopia (URL legacy): si el usuario es paciente, lo enviamos a la
+// versión integrada del portal; si no, a /login.
+function DermoscopiaRedirect() {
+  const { user, loading } = useAuth()
+  if (loading) return null
+  if (user?.rol === 'paciente') {
+    const slug = user.clinica_slug || 'clinica-lumiere'
+    return <Navigate to={`/clinica/${slug}/dermoscopia`} replace />
+  }
+  return <Navigate to="/login" replace />
+}
 
 // ── Protected route: redirects to /login if unauthenticated ──
 function RequireAuth({ children }) {
@@ -40,20 +66,64 @@ function RequireAuth({ children }) {
   return children
 }
 
+// ── RequireRole: bloquea acceso si el rol no coincide y redirige
+// al portal apropiado para el rol del usuario. Defensa en profundidad
+// junto con las policies RLS de Supabase.
+const STAFF_ROLES = ['admin', 'medico', 'recepcion']
+function RequireRole({ roles, children }) {
+  const { user, loading } = useAuth()
+  if (loading) return null
+  if (!user) return <Navigate to="/login" replace />
+  if (!roles.includes(user.rol)) {
+    const slug = user.clinica_slug || 'clinica-lumiere'
+    const fallback = user.rol === 'paciente'
+      ? `/clinica/${slug}/mi-perfil`
+      : `/clinica/${slug}/dashboard`
+    return <Navigate to={fallback} replace />
+  }
+  return children
+}
+
+// ── Catch-all: cualquier subruta /clinica/:slug/* no reconocida
+// envía al usuario a su portal según rol.
+function RoleHomeRedirect() {
+  const { user } = useAuth()
+  const slug = user?.clinica_slug || 'clinica-lumiere'
+  const dest = user?.rol === 'paciente' ? 'mi-perfil' : 'dashboard'
+  return <Navigate to={`/clinica/${slug}/${dest}`} replace />
+}
+
+// ── /analisis renderiza distinto componente según rol:
+// staff ve la lista clínica completa; paciente ve solo sus análisis.
+function AnalisisPorRol() {
+  const { user } = useAuth()
+  if (user?.rol === 'paciente') return <MisAnalisisPage />
+  return <AnalisisClinicaPage />
+}
+
 // ── Clinic routes wrapped in ClinicProvider ───────────────────
 function ClinicRoutes() {
   return (
     <ClinicProvider>
       <CitasProvider>
         <Routes>
-          <Route path="dashboard"          element={<DashboardPage />} />
-          <Route path="pacientes"          element={<PacientesPage />} />
-          <Route path="paciente/:id"       element={<PacienteDetallePage />} />
-          <Route path="analisis"           element={<AnalisisClinicaPage />} />
-          <Route path="agenda"             element={<AgendaPage />} />
-          <Route path="mi-perfil/citas"    element={<MisCitasPacientePage />} />
-          <Route path="configuracion"      element={<ConfiguracionPage />} />
-          <Route path="*"                  element={<Navigate to="dashboard" replace />} />
+          {/* ── Staff (admin/medico/recepcion) ── */}
+          <Route path="dashboard"     element={<RequireRole roles={STAFF_ROLES}><DashboardPage /></RequireRole>} />
+          <Route path="pacientes"     element={<RequireRole roles={STAFF_ROLES}><PacientesPage /></RequireRole>} />
+          <Route path="paciente/:id"  element={<RequireRole roles={STAFF_ROLES}><PacienteDetallePage /></RequireRole>} />
+          <Route path="agenda"        element={<RequireRole roles={STAFF_ROLES}><AgendaPage /></RequireRole>} />
+          <Route path="configuracion" element={<RequireRole roles={['admin']}><ConfiguracionPage /></RequireRole>} />
+
+          {/* ── Paciente ── */}
+          <Route path="mi-perfil"        element={<RequireRole roles={['paciente']}><MiPerfilPage /></RequireRole>} />
+          <Route path="mi-perfil/citas"  element={<RequireRole roles={['paciente']}><MisCitasPacientePage /></RequireRole>} />
+          <Route path="dermoscopia"      element={<RequireRole roles={['paciente']}><DermoscopiaWrapper /></RequireRole>} />
+
+          {/* ── /analisis: distinto componente por rol ── */}
+          <Route path="analisis"      element={<AnalisisPorRol />} />
+
+          {/* ── Catch-all: redirige al home del rol ── */}
+          <Route path="*"             element={<RoleHomeRedirect />} />
         </Routes>
       </CitasProvider>
     </ClinicProvider>
@@ -96,14 +166,20 @@ export default function App() {
           <Route path="/politica-privacidad" element={<PoliticaPrivacidadPage />} />
           <Route path="/registro/:slug"      element={<PatientShell><RegistroPacientePage /></PatientShell>} />
 
-          {/* ── Patient-facing ── */}
+          {/* ── App de paciente legacy (Valentina + datos hardcoded) ──
+              Retirada para evitar confusión con el portal real autenticado.
+              Cualquier acceso a estas URLs antiguas envía a /login, que con el
+              redirect por rol llevará al usuario al portal correcto:
+                - paciente  → /clinica/:slug/mi-perfil
+                - staff     → /clinica/:slug/dashboard
+              La página /bienvenida se conserva como entrada amistosa. */}
           <Route path="/bienvenida"  element={<PatientShell><WelcomePage /></PatientShell>} />
-          <Route path="/home"        element={<PatientShell><HomePage /></PatientShell>} />
-          <Route path="/analisis"    element={<PatientShell><AnalisisPage /></PatientShell>} />
-          <Route path="/reservar"    element={<PatientShell><ReservarPage /></PatientShell>} />
-          <Route path="/historial"   element={<PatientShell><HistorialPage /></PatientShell>} />
-          <Route path="/skin-check"  element={<PatientShell><SkinCheckPage /></PatientShell>} />
-          <Route path="/dermoscopia" element={<PatientShell><DermoscopiaPage /></PatientShell>} />
+          <Route path="/home"        element={<Navigate to="/login" replace />} />
+          <Route path="/analisis"    element={<Navigate to="/login" replace />} />
+          <Route path="/reservar"    element={<Navigate to="/login" replace />} />
+          <Route path="/historial"   element={<Navigate to="/login" replace />} />
+          <Route path="/skin-check"  element={<Navigate to="/login" replace />} />
+          <Route path="/dermoscopia" element={<DermoscopiaRedirect />} />
 
           {/* ── Login / Demo ── */}
           <Route path="/login" element={<PatientShell><LoginPage /></PatientShell>} />

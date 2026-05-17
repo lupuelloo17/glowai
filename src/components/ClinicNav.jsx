@@ -1,35 +1,47 @@
 import { useNavigate, useLocation, useParams } from 'react-router-dom'
-import { LayoutDashboard, Users, Microscope, CalendarDays, Settings } from 'lucide-react'
+import { LayoutDashboard, Users, Microscope, CalendarDays, Settings, Home, User as UserIcon } from 'lucide-react'
 import { useClinic } from '../contexts/ClinicContext'
 import { useAuth } from '../contexts/AuthContext'
 
 export default function ClinicNav() {
   const navigate    = useNavigate()
-  const { pathname } = useLocation()
+  const { pathname, hash } = useLocation()
   const { slug }    = useParams()
   const { clinica } = useClinic()
   const { user }    = useAuth()
 
-  const isAdmin = user?.rol === 'admin'
+  const isAdmin    = user?.rol === 'admin'
+  const isPaciente = user?.rol === 'paciente'
 
-  const TABS = [
-    { label: 'Dashboard',  icon: LayoutDashboard, path: `/clinica/${slug}/dashboard` },
-    { label: 'Pacientes',  icon: Users,            path: `/clinica/${slug}/pacientes` },
-    { label: 'Análisis',   icon: Microscope,       path: `/clinica/${slug}/analisis`  },
-    { label: 'Agenda',     icon: CalendarDays,     path: `/clinica/${slug}/agenda`    },
-    ...(isAdmin ? [{ label: 'Config',  icon: Settings, path: `/clinica/${slug}/configuracion` }] : []),
-  ]
+  // El paciente ve su propia navegación; el staff ve la del panel clínico.
+  const TABS = isPaciente
+    ? [
+        { label: 'Inicio',   icon: Home,          path: `/clinica/${slug}/mi-perfil` },
+        { label: 'Análisis', icon: Microscope,    path: `/clinica/${slug}/analisis` },
+        { label: 'Citas',    icon: CalendarDays,  path: `/clinica/${slug}/mi-perfil/citas` },
+        { label: 'Datos',    icon: UserIcon,      path: `/clinica/${slug}/mi-perfil`, hash: '#datos' },
+      ]
+    : [
+        { label: 'Dashboard', icon: LayoutDashboard, path: `/clinica/${slug}/dashboard` },
+        { label: 'Pacientes', icon: Users,           path: `/clinica/${slug}/pacientes` },
+        { label: 'Análisis',  icon: Microscope,      path: `/clinica/${slug}/analisis`  },
+        { label: 'Agenda',    icon: CalendarDays,    path: `/clinica/${slug}/agenda`    },
+        ...(isAdmin ? [{ label: 'Config', icon: Settings, path: `/clinica/${slug}/configuracion` }] : []),
+      ]
 
   const brand = clinica?.color_primario ?? '#E8A0B0'
 
   return (
     <nav className="border-t border-gray-100 bg-white px-1 py-2 flex items-center justify-around">
-      {TABS.map(({ label, icon: Icon, path }) => {
-        const active = pathname.startsWith(path)
+      {TABS.map(({ label, icon: Icon, path, hash: tabHash }) => {
+        // Para tabs con hash (paciente "Datos"), también consideramos el hash
+        const active = tabHash
+          ? (pathname === path && hash === tabHash)
+          : pathname.startsWith(path)
         return (
           <button
-            key={path}
-            onClick={() => navigate(path)}
+            key={`${path}${tabHash ?? ''}`}
+            onClick={() => navigate(path + (tabHash ?? ''))}
             className="flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl transition-all"
           >
             <Icon

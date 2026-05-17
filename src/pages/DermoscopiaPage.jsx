@@ -1,7 +1,12 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Camera, Upload, FileText, RefreshCw, CalendarDays, Printer } from 'lucide-react'
+import {
+  ArrowLeft, Camera, Upload, FileText, RefreshCw, CalendarDays, Printer,
+  Grid3x3, Cloud, Activity, Sun, Palette, Circle, MinusCircle, Send, Shield, CheckCircle2,
+} from 'lucide-react'
 import BottomNav from '../components/BottomNav'
+import { useAuth } from '../contexts/AuthContext'
+import { supabase } from '../lib/supabase'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -12,21 +17,34 @@ const LOADING_STEPS = [
   { msg: 'Generando informe dermoscópico…',                    pct: 95 },
 ]
 
+// 7-Point Checklist de Argenziano (Arch Dermatol. 1998;134(12):1563-1570)
+// 3 criterios mayores (2pts c/u) + 4 menores (1pt c/u). Score ≥3 → derivar a Dermatología.
+//   - label:      nombre clínico oficial
+//   - clinical:   descripción técnica para el informe médico
+//   - accessible: explicación en lenguaje paciente-friendly
+//   - icon:       icono visual de lucide-react
 const CRITERIA = [
-  { id: 1, major: true,  pts: 2, label: 'Red pigmentada atípica',
-    clinical: 'Retículo melanocítico irregular con líneas engrosadas y orificios asimétricos.' },
-  { id: 2, major: true,  pts: 2, label: 'Velo azul-blanquecino (Blue-whitish veil)',
-    clinical: 'Área azul-blanca difusa e irregular superpuesta sobre una zona elevada de la lesión.' },
-  { id: 3, major: true,  pts: 2, label: 'Patrón vascular atípico',
-    clinical: 'Vasos sanguíneos irregulares: puntiformes, glomerulares, en horquilla o polimorfos no asociados a regresión.' },
-  { id: 4, major: false, pts: 1, label: 'Proyecciones radiales irregulares (Streaks)',
-    clinical: 'Proyecciones lineales en la periferia de la lesión sin pigmentación folicular visible.' },
-  { id: 5, major: false, pts: 1, label: 'Pigmentación irregular',
-    clinical: 'Áreas de pigmentación marrón, gris o negra con distribución asimétrica e irregular.' },
-  { id: 6, major: false, pts: 1, label: 'Puntos y glóbulos irregulares',
-    clinical: 'Estructuras redondeadas u ovales, negras, marrones o grises con variación en tamaño y distribución irregular.' },
-  { id: 7, major: false, pts: 1, label: 'Estructuras de regresión',
-    clinical: 'Áreas blancas cicatriciales o zonas de pigmentación azul-pizarra (peppering) en el contexto de la lesión melanocítica.' },
+  { id: 1, major: true,  pts: 2, label: 'Red de pigmento atípica',     icon: Grid3x3,
+    clinical:   'Retículo melanocítico irregular con líneas engrosadas y orificios asimétricos.',
+    accessible: 'Un patrón de "red" en la piel que normalmente es uniforme, pero en esta lesión parece desigual o roto.' },
+  { id: 2, major: true,  pts: 2, label: 'Velo azul-blanquecino',       icon: Cloud,
+    clinical:   'Área azul-blanca difusa e irregular superpuesta sobre una zona elevada de la lesión.',
+    accessible: 'Un área que se ve como cubierta por una capa azulada o blanquecina, como si tuviera un velo encima.' },
+  { id: 3, major: true,  pts: 2, label: 'Patrón vascular atípico',     icon: Activity,
+    clinical:   'Vasos sanguíneos irregulares: puntiformes, glomerulares, en horquilla o polimorfos no asociados a regresión.',
+    accessible: 'Vasos sanguíneos visibles con formas o disposición fuera de lo normal dentro de la lesión.' },
+  { id: 4, major: false, pts: 1, label: 'Estrías radiales irregulares', icon: Sun,
+    clinical:   'Proyecciones lineales en la periferia de la lesión sin pigmentación folicular visible.',
+    accessible: 'Pequeñas líneas que salen del borde de la lesión hacia fuera, como rayos de sol asimétricos.' },
+  { id: 5, major: false, pts: 1, label: 'Manchas de pigmento irregulares', icon: Palette,
+    clinical:   'Áreas de pigmentación marrón, gris o negra con distribución asimétrica e irregular.',
+    accessible: 'Zonas de distinto color (marrón, gris, negro) repartidas de forma desigual.' },
+  { id: 6, major: false, pts: 1, label: 'Puntos y glóbulos irregulares', icon: Circle,
+    clinical:   'Estructuras redondeadas u ovales, negras, marrones o grises con variación en tamaño y distribución irregular.',
+    accessible: 'Puntitos pequeños y "bolitas" dentro de la lesión, con tamaños y distribución desiguales.' },
+  { id: 7, major: false, pts: 1, label: 'Estructuras de regresión',     icon: MinusCircle,
+    clinical:   'Áreas blancas cicatriciales o zonas de pigmentación azul-pizarra (peppering) en el contexto de la lesión melanocítica.',
+    accessible: 'Áreas más claras o blanquecinas, como si la piel se hubiera "despigmentado" en esa zona.' },
 ]
 
 const MORPHO_PARAMS = [
@@ -45,21 +63,24 @@ const RESULT_STYLE = {
 
 function riskConfig(score) {
   if (score <= 1) return {
-    label: 'BAJO', color: 'text-green-700', bg: 'bg-green-50', border: 'border-green-200',
+    label: 'BAJO', nivel: 'bajo', color: 'text-green-700', bg: 'bg-green-50', border: 'border-green-200',
     barColor: 'bg-green-500',
     text: 'Lesión de bajo riesgo. Control fotográfico en 12 meses recomendado.',
+    accessible: 'No se detectan signos de alarma. Te recomendamos una revisión rutinaria con tu médico.',
     impression: 'Hallazgos dermoscópicos dentro de parámetros benignos. Ausencia de criterios mayores de malignidad. Se recomienda control fotográfico comparativo en 12 meses.',
   }
   if (score <= 4) return {
-    label: 'MODERADO', color: 'text-amber-700', bg: 'bg-amber-50', border: 'border-amber-200',
+    label: 'MODERADO', nivel: 'moderado', color: 'text-amber-700', bg: 'bg-amber-50', border: 'border-amber-200',
     barColor: 'bg-amber-500',
     text: 'Lesión de riesgo moderado. Valoración dermatoscópica presencial recomendada en 4-6 semanas.',
+    accessible: 'Algunos criterios merecen atención. Te recomendamos consultar con tu médico en las próximas semanas.',
     impression: 'Presencia de criterios menores con potencial de atipía. Se recomienda valoración dermatoscópica presencial en 4-6 semanas para establecer diagnóstico diferencial con nevus atípico displásico.',
   }
   return {
-    label: 'ALTO', color: 'text-red-700', bg: 'bg-red-50', border: 'border-red-200',
+    label: 'ALTO', nivel: 'alto', color: 'text-red-700', bg: 'bg-red-50', border: 'border-red-200',
     barColor: 'bg-red-500',
     text: 'Lesión de alto índice de sospecha. Derivación urgente a Dermatología recomendada.',
+    accessible: 'Se detectan criterios de alerta. Consulta dermatológica presencial urgente recomendada.',
     impression: 'Criterios mayores positivos con puntuación de alto índice de sospecha. Derivación urgente a Dermatología para valoración presencial, biopsia escisional y estudio anatomopatológico.',
   }
 }
@@ -218,6 +239,7 @@ function selectProducts(results, morpho, score) {
 
 function CriterionCard({ criterion, result, index, visible }) {
   const s = RESULT_STYLE[result]
+  const Icon = criterion.icon || Circle
   return (
     <div
       style={{
@@ -230,29 +252,44 @@ function CriterionCard({ criterion, result, index, visible }) {
       }`}
     >
       <div className="px-4 pt-3 pb-3">
-        <div className="flex items-start justify-between gap-2 mb-1.5">
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-              {criterion.major && (
-                <span className="text-[10px] font-bold bg-gray-800 text-white px-1.5 py-0.5 rounded tracking-wide">
-                  MAYOR · {criterion.pts}pts
-                </span>
-              )}
-              {!criterion.major && (
-                <span className="text-[10px] font-bold bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded tracking-wide">
-                  MENOR · {criterion.pts}pt
-                </span>
-              )}
-              <span className="text-gray-400 text-[10px]">Criterio {criterion.id}</span>
+        <div className="flex items-start gap-3">
+          {/* Icono visual */}
+          <div className={`w-10 h-10 rounded-xl flex-shrink-0 flex items-center justify-center ${
+            result === 'present' ? 'bg-red-50' : result === 'absent' ? 'bg-green-50' : 'bg-amber-50'
+          }`}>
+            <Icon size={20} className={
+              result === 'present' ? 'text-red-600' : result === 'absent' ? 'text-green-600' : 'text-amber-600'
+            } />
+          </div>
+
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
+              {criterion.major
+                ? <span className="text-[9px] font-bold bg-gray-800 text-white px-1.5 py-0.5 rounded tracking-wide">MAYOR · {criterion.pts}pts</span>
+                : <span className="text-[9px] font-bold bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded tracking-wide">MENOR · {criterion.pts}pt</span>
+              }
+              <span className="text-gray-400 text-[9px]">#{criterion.id}</span>
             </div>
             <p className="text-gray-900 text-sm font-semibold leading-snug">{criterion.label}</p>
           </div>
+
           <span className={`flex-shrink-0 flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-md border ${s.bg} ${s.text} ${s.border}`}>
-            <span className={`w-1.5 h-1.5 rounded-full ${s.dot} animate-pulse`} />
+            <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
             {s.label}
           </span>
         </div>
-        <p className="text-gray-500 text-xs leading-relaxed">{criterion.clinical}</p>
+        {/* Descripción accesible para paciente + clínica colapsable */}
+        <div className="mt-2.5 ml-13" style={{ paddingLeft: '52px' }}>
+          <p className="text-gray-700 text-xs leading-relaxed mb-1">
+            {criterion.accessible}
+          </p>
+          <details className="text-[10px]">
+            <summary className="text-gray-400 cursor-pointer hover:text-gray-600 select-none">
+              Ver descripción clínica
+            </summary>
+            <p className="text-gray-500 mt-1 leading-relaxed">{criterion.clinical}</p>
+          </details>
+        </div>
       </div>
     </div>
   )
@@ -314,14 +351,22 @@ function ProductCard({ product }) {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-export default function DermoscopiaPage() {
+// `embedded`: cuando es true, no renderiza su propio BottomNav (se asume que
+// está dentro de un layout que ya lo aporta, ej. ClinicLayout) y ajusta la
+// navegación de "volver" a la pantalla anterior en vez del legacy /home.
+export default function DermoscopiaPage({ embedded = false }) {
   const navigate = useNavigate()
   const fileRef = useRef(null)
+  const { user } = useAuth()
 
   // step: 'capture' | 'analyzing' | 'report'
   const [step, setStep]         = useState('capture')
   const [preview, setPreview]   = useState(null)
+  const [previewFile, setPreviewFile] = useState(null)
   const [dragging, setDragging] = useState(false)
+  const [analysisId, setAnalysisId] = useState(null)
+  const [guardando, setGuardando]   = useState(false)
+  const [compartido, setCompartido] = useState(false)
 
   // Analysis state
   const [progress, setProgress]       = useState(0)
@@ -338,6 +383,7 @@ export default function DermoscopiaPage() {
   // ── Image load ──
   function loadImage(file) {
     if (!file?.type.startsWith('image/')) return
+    setPreviewFile(file)
     const reader = new FileReader()
     reader.onload = e => setPreview(e.target.result)
     reader.readAsDataURL(file)
@@ -370,7 +416,7 @@ export default function DermoscopiaPage() {
     })
 
     // Complete at 3s
-    setTimeout(() => {
+    setTimeout(async () => {
       const r = buildResults()
       const m = buildMorpho()
       const s = calcScore(r)
@@ -380,14 +426,89 @@ export default function DermoscopiaPage() {
       setStep('report')
       setTimeout(() => setCardsVisible(true), 100)
       setTimeout(() => setReportVisible(true), CRITERIA.length * 90 + 300)
+
+      // Si hay paciente logueado y Supabase configurado, guardar persistente
+      if (supabase && user?.id && user?.rol === 'paciente' && previewFile) {
+        await saveAnalysis(r, s, riskConfig(s))
+      }
     }, 3000)
   }
 
+  // ── Persistencia: sube foto al bucket "analisis" e inserta fila ──
+  async function saveAnalysis(results, score, risk) {
+    setGuardando(true)
+    try {
+      // 1. Resolver clinica_id + medico_id del paciente
+      const { data: pac } = await supabase
+        .from('pacientes')
+        .select('medico_id, clinica_id')
+        .eq('id', user.id)
+        .maybeSingle()
+      const medicoId  = pac?.medico_id ?? null
+      const clinicaId = pac?.clinica_id ?? user.clinica_id
+      if (!clinicaId) throw new Error('clinica_id no resuelto')
+
+      // 2. Subir imagen al bucket "analisis" (path: clinica/paciente/timestamp.ext)
+      const ext  = previewFile.name.split('.').pop()?.toLowerCase() ?? 'jpg'
+      const path = `${clinicaId}/${user.id}/${Date.now()}.${ext}`
+      const { error: upErr } = await supabase.storage
+        .from('analisis')
+        .upload(path, previewFile, { contentType: previewFile.type })
+      if (upErr) throw upErr
+      const { data: pub } = supabase.storage.from('analisis').getPublicUrl(path)
+
+      // 3. Construir JSON de criterios y guardar análisis
+      const criteriosJson = {}
+      CRITERIA.forEach(c => { criteriosJson[c.label] = results[c.id] })
+
+      const { data, error } = await supabase
+        .from('analisis_dermoscopicos')
+        .insert({
+          paciente_id: user.id,
+          clinica_id:  clinicaId,
+          medico_id:   medicoId,
+          fecha:       new Date().toISOString(),
+          criterios:   criteriosJson,
+          puntuacion_total: score,
+          nivel_riesgo:     risk.nivel,
+          imagen_url:       pub.publicUrl,
+          compartido_medico: false,
+        })
+        .select()
+        .single()
+      if (error) throw error
+      setAnalysisId(data.id)
+    } catch (err) {
+      console.error('[Dermoscopia save]', err.message)
+    } finally {
+      setGuardando(false)
+    }
+  }
+
+  async function handleCompartir() {
+    if (!analysisId || !supabase) {
+      alert('Para compartir, inicia sesión como paciente.')
+      return
+    }
+    const { error } = await supabase
+      .from('analisis_dermoscopicos')
+      .update({ compartido_medico: true })
+      .eq('id', analysisId)
+    if (error) return alert('Error: ' + error.message)
+    setCompartido(true)
+  }
+
+  // Destino "Solicitar cita" según rol del usuario
+  const solicitarCitaPath = user?.rol === 'paciente'
+    ? `/clinica/${user.clinica_slug || 'clinica-lumiere'}/mi-perfil/citas`
+    : '/reservar'
+
   // ── Reset ──
   function reset() {
-    setStep('capture'); setPreview(null)
+    setStep('capture'); setPreview(null); setPreviewFile(null)
     setProgress(0); setResults({}); setMorpho({})
     setScore(0); setCardsVisible(false); setReportVisible(false)
+    setAnalysisId(null); setCompartido(false)
   }
 
   const risk = riskConfig(score)
@@ -404,7 +525,13 @@ export default function DermoscopiaPage() {
       <div className="bg-white border-b border-gray-100 px-5 pt-7 pb-4">
         <div className="flex items-center gap-3 mb-1">
           <button
-            onClick={() => step === 'report' ? reset() : navigate('/home')}
+            onClick={() => {
+              if (step === 'report') return reset()
+              if (embedded && user?.rol === 'paciente') {
+                return navigate(`/clinica/${user.clinica_slug || 'clinica-lumiere'}/analisis`)
+              }
+              return navigate(-1)
+            }}
             className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 text-gray-600 flex-shrink-0"
           >
             <ArrowLeft size={18} />
@@ -726,13 +853,46 @@ especialista en Dermatología.`}
               }}
               className="space-y-2 pb-2"
             >
+              {/* Indicador de guardado / estado para pacientes */}
+              {user?.rol === 'paciente' && (
+                <div className="mb-2 px-3 py-2 rounded-xl text-xs flex items-center gap-2"
+                     style={{ backgroundColor: '#f9fafb', border: '1px solid #e5e7eb' }}>
+                  {guardando ? (
+                    <span className="text-gray-500">Guardando análisis en tu historial…</span>
+                  ) : analysisId ? (
+                    <span className="text-green-700 flex items-center gap-1.5">
+                      <CheckCircle2 size={12} /> Análisis guardado en tu historial
+                    </span>
+                  ) : (
+                    <span className="text-gray-500">Análisis disponible solo en esta sesión</span>
+                  )}
+                </div>
+              )}
+
               <button
-                onClick={() => navigate('/reservar')}
+                onClick={() => navigate(solicitarCitaPath)}
                 className="w-full bg-blush-400 text-white font-semibold text-sm py-4 rounded-xl active:scale-95 transition-transform flex items-center justify-center gap-2"
               >
                 <CalendarDays size={16} />
-                Solicitar valoración presencial
+                Solicitar cita con mi médico
               </button>
+
+              {/* Compartir con médico — solo si paciente y análisis guardado */}
+              {user?.rol === 'paciente' && analysisId && (
+                <button
+                  onClick={handleCompartir}
+                  disabled={compartido}
+                  className="w-full font-semibold text-sm py-4 rounded-xl active:scale-95 transition-transform flex items-center justify-center gap-2 disabled:opacity-60"
+                  style={{
+                    backgroundColor: compartido ? '#dcfce7' : '#dbeafe',
+                    color: compartido ? '#15803d' : '#1d4ed8',
+                    border: `1px solid ${compartido ? '#bbf7d0' : '#bfdbfe'}`,
+                  }}
+                >
+                  {compartido ? <><CheckCircle2 size={16} /> Compartido con tu médico</> : <><Send size={16} /> Compartir con mi médico</>}
+                </button>
+              )}
+
               <button
                 onClick={() => window.print()}
                 className="w-full bg-white border border-gray-200 text-gray-700 font-medium text-sm py-3.5 rounded-xl active:scale-95 transition-transform flex items-center justify-center gap-2"
@@ -757,7 +917,7 @@ especialista en Dermatología.`}
         )}
       </div>
 
-      <BottomNav />
+      {!embedded && <BottomNav />}
     </div>
   )
 }

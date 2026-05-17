@@ -12,7 +12,7 @@
 // IMPORTANTE: bumpear CACHE_VERSION en cada release importante para forzar
 // purga del caché viejo. Vite genera hashes propios para los assets, pero el
 // caché del HTML/manifest necesita esta señal manual.
-const CACHE_VERSION = 'v2-2026-05-16'
+const CACHE_VERSION = 'v3-2026-05-17'
 const CACHE_NAME    = `glowai-${CACHE_VERSION}`
 
 const PRECACHE_URLS = [

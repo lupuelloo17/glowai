@@ -13,7 +13,10 @@
       "Bash(npm install:*)",
       "Bash(curl -s http://localhost:3000/clinica/clinica-lumiere/dashboard)",
       "Bash(curl -s http://localhost:3000/login)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(rm -rf node_modules/.vite)",
+      "Bash(npm run:*)",
+      "Bash(vercel:*)"
     ]
   }
 }

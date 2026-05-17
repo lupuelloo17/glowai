@@ -39,6 +39,12 @@ const DEMO_ACCOUNTS = [
     desc: 'Medicina Estética · vista de médico',
     color: '#C8A882',
   },
+  {
+    email: 'paciente@lumiere.com',
+    label: 'Sofía Restrepo',
+    desc: 'Paciente · su perfil, citas, análisis',
+    color: '#D4A5B4',
+  },
 ]
 
 export default function LoginPage() {
@@ -65,7 +71,10 @@ export default function LoginPage() {
     setError(null)
     try {
       const user = await login(email.trim(), password)
-      navigate(`/clinica/${user.clinica_slug}/dashboard`, { replace: true })
+      // Redirige según rol: paciente → su perfil; staff → dashboard
+      const slug = user.clinica_slug || 'clinica-lumiere'
+      const dest = user.rol === 'paciente' ? 'mi-perfil' : 'dashboard'
+      navigate(`/clinica/${slug}/${dest}`, { replace: true })
     } catch (err) {
       setError(err.message)
     } finally {
