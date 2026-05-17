@@ -38,8 +38,8 @@ export default {
       },
       fontFamily: {
         sans:    ['Inter', 'system-ui', 'sans-serif'],
-        // Serif para wordmark y headings de branding (similar al logo)
-        display: ['"Cormorant Garamond"', '"Playfair Display"', 'Georgia', 'serif'],
+        // El wordmark Veloura usa sans-serif geométrico moderno (no serif)
+        display: ['Inter', '"DM Sans"', 'Helvetica Neue', 'system-ui', 'sans-serif'],
       },
     },
   },

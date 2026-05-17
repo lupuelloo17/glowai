@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Veloura favicon">
+  <defs>
+    <linearGradient id="fav-gold" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%"   stop-color="#D4B17C"/>
+      <stop offset="100%" stop-color="#A88451"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Versión reducida del símbolo Veloura (sin el diamante superior pequeño,
+       que a 16-32px se pierde). Solo dos pétalos curvos en gold. -->
+  <path
+    d="M 16 4
+       C 14 5, 10 8, 6 14
+       C 3 19, 3 24, 7 27
+       C 11 29, 14 27, 16 23
+       L 16 4 Z"
+    fill="url(#fav-gold)"
+  />
+  <path
+    d="M 16 4
+       C 18 5, 22 8, 26 14
+       C 29 19, 29 24, 25 27
+       C 21 29, 18 27, 16 23
+       L 16 4 Z"
+    fill="url(#fav-gold)"
+  />
+</svg>

@@ -1,41 +1,45 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="Veloura isotipo">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 240" role="img" aria-label="Veloura isotipo">
   <defs>
-    <linearGradient id="vgold" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%"   stop-color="#E1C690"/>
+    <linearGradient id="v-gold" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%"   stop-color="#D4B17C"/>
       <stop offset="50%"  stop-color="#C9A46A"/>
-      <stop offset="100%" stop-color="#9C7338"/>
+      <stop offset="100%" stop-color="#A88451"/>
     </linearGradient>
   </defs>
 
-  <!-- Forma "V" estilizada que envuelve el perfil -->
+  <!-- Diamante pequeño superior (la "cabecita" del tulipán) -->
   <path
-    d="M 40 50
-       C 60 90, 80 120, 100 145
-       C 120 120, 140 90, 160 50
-       L 145 50
-       C 130 85, 115 110, 100 125
-       C 85 110, 70 85, 55 50
-       Z"
-    fill="url(#vgold)"
+    d="M 100 12
+       L 118 38
+       L 100 64
+       L 82 38 Z"
+    fill="url(#v-gold)"
   />
 
-  <!-- Pequeño detalle de perfil dentro de la V (silueta de cara mirando a la derecha) -->
+  <!-- Pétalo izquierdo: forma de hoja curva apuntando hacia arriba-izquierda -->
   <path
-    d="M 100 75
-       C 108 75, 113 80, 113 88
-       C 113 92, 111 95, 108 97
-       L 108 102
-       L 113 102
-       L 113 108
-       L 108 108
-       L 108 115
-       C 108 118, 106 120, 102 120
-       L 96 120
-       C 92 120, 90 117, 90 113
-       L 90 95
-       C 88 92, 87 88, 87 84
-       C 87 78, 92 75, 100 75 Z"
-    fill="url(#vgold)"
-    opacity="0.85"
+    d="M 100 80
+       C 95 82, 88 87, 78 100
+       C 60 122, 45 150, 38 180
+       C 35 195, 38 210, 50 220
+       C 62 226, 78 222, 92 208
+       C 100 200, 100 188, 100 172
+       L 100 80 Z"
+    fill="url(#v-gold)"
   />
+
+  <!-- Pétalo derecho: simétrico -->
+  <path
+    d="M 100 80
+       C 105 82, 112 87, 122 100
+       C 140 122, 155 150, 162 180
+       C 165 195, 162 210, 150 220
+       C 138 226, 122 222, 108 208
+       C 100 200, 100 188, 100 172
+       L 100 80 Z"
+    fill="url(#v-gold)"
+  />
+
+  <!-- El diamante central de espacio negativo entre los pétalos
+       (se logra cortando con un path de fondo del color de página) -->
 </svg>

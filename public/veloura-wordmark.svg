@@ -1,62 +1,43 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 200" role="img" aria-label="Veloura — La plataforma inteligente para clínicas estéticas">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 200" role="img" aria-label="Veloura — La plataforma inteligente para clínicas estéticas">
   <defs>
-    <linearGradient id="vgold2" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%"   stop-color="#E1C690"/>
+    <linearGradient id="vw-gold" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%"   stop-color="#D4B17C"/>
       <stop offset="50%"  stop-color="#C9A46A"/>
-      <stop offset="100%" stop-color="#9C7338"/>
+      <stop offset="100%" stop-color="#A88451"/>
     </linearGradient>
   </defs>
 
-  <!-- Isotipo a la izquierda -->
-  <g transform="translate(15 20)">
+  <!-- Isotipo a la izquierda (mismo símbolo: diamante + dos pétalos) -->
+  <g transform="translate(20 20) scale(0.65)">
+    <!-- Diamante superior -->
+    <path d="M 100 12 L 118 38 L 100 64 L 82 38 Z" fill="url(#vw-gold)"/>
+    <!-- Pétalo izquierdo -->
     <path
-      d="M 20 30
-         C 35 60, 50 80, 65 100
-         C 80 80, 95 60, 110 30
-         L 100 30
-         C 88 56, 78 76, 65 90
-         C 52 76, 42 56, 30 30
-         Z"
-      fill="url(#vgold2)"
+      d="M 100 80 C 95 82, 88 87, 78 100
+         C 60 122, 45 150, 38 180
+         C 35 195, 38 210, 50 220
+         C 62 226, 78 222, 92 208
+         C 100 200, 100 188, 100 172 L 100 80 Z"
+      fill="url(#vw-gold)"
     />
+    <!-- Pétalo derecho -->
     <path
-      d="M 65 50
-         C 72 50, 76 54, 76 60
-         C 76 63, 75 65, 73 67
-         L 73 71
-         L 76 71
-         L 76 75
-         L 73 75
-         L 73 80
-         C 73 82, 71 84, 68 84
-         L 64 84
-         C 61 84, 60 82, 60 80
-         L 60 67
-         C 58 65, 57 62, 57 59
-         C 57 54, 60 50, 65 50 Z"
-      fill="url(#vgold2)"
-      opacity="0.85"
+      d="M 100 80 C 105 82, 112 87, 122 100
+         C 140 122, 155 150, 162 180
+         C 165 195, 162 210, 150 220
+         C 138 226, 122 222, 108 208
+         C 100 200, 100 188, 100 172 L 100 80 Z"
+      fill="url(#vw-gold)"
     />
   </g>
 
-  <!-- Wordmark "VELOURA" -->
+  <!-- Wordmark "VELOURA" en sans-serif geométrico moderno -->
   <text
-    x="155" y="115"
-    font-family="'Cormorant Garamond', 'Playfair Display', Georgia, serif"
-    font-weight="500"
-    font-size="84"
-    letter-spacing="6"
+    x="195" y="125"
+    font-family="'Inter', 'DM Sans', 'Helvetica Neue', system-ui, sans-serif"
+    font-weight="700"
+    font-size="90"
+    letter-spacing="4"
     fill="#2D2A26"
   >VELOURA</text>
-
-  <!-- Tagline debajo -->
-  <text
-    x="155" y="155"
-    font-family="'Inter', sans-serif"
-    font-weight="400"
-    font-size="11"
-    letter-spacing="3"
-    fill="#2D2A26"
-    opacity="0.65"
-  >LA PLATAFORMA INTELIGENTE PARA CLÍNICAS ESTÉTICAS</text>
 </svg>

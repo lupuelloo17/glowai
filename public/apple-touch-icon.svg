@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180" role="img" aria-label="Veloura icon">
+  <defs>
+    <linearGradient id="ai-gold" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%"   stop-color="#D4B17C"/>
+      <stop offset="50%"  stop-color="#C9A46A"/>
+      <stop offset="100%" stop-color="#A88451"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Fondo beige cálido con bordes redondeados (iOS app icon style) -->
+  <rect x="0" y="0" width="180" height="180" rx="40" ry="40" fill="#F7F3EE"/>
+
+  <!-- Isotipo centrado y escalado -->
+  <g transform="translate(35 30) scale(0.55)">
+    <!-- Diamante superior -->
+    <path d="M 100 12 L 118 38 L 100 64 L 82 38 Z" fill="url(#ai-gold)"/>
+    <!-- Pétalo izquierdo -->
+    <path
+      d="M 100 80 C 95 82, 88 87, 78 100
+         C 60 122, 45 150, 38 180
+         C 35 195, 38 210, 50 220
+         C 62 226, 78 222, 92 208
+         C 100 200, 100 188, 100 172 L 100 80 Z"
+      fill="url(#ai-gold)"
+    />
+    <!-- Pétalo derecho -->
+    <path
+      d="M 100 80 C 105 82, 112 87, 122 100
+         C 140 122, 155 150, 162 180
+         C 165 195, 162 210, 150 220
+         C 138 226, 122 222, 108 208
+         C 100 200, 100 188, 100 172 L 100 80 Z"
+      fill="url(#ai-gold)"
+    />
+  </g>
+</svg>
