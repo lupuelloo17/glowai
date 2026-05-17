@@ -11,6 +11,7 @@ import { useClinic } from '../../contexts/ClinicContext'
 import { useAuth } from '../../contexts/AuthContext'
 import { supabase } from '../../lib/supabase'
 import { PLANES, formatEUR } from '../../config/planes'
+import { formatPrecio } from '../../utils/fecha'
 
 // ── Helpers ──────────────────────────────────────────────────────
 const DURACIONES = [15, 30, 45, 60, 90, 120]
@@ -80,6 +81,24 @@ function SecIdentidad({ clinica, brand, onSave }) {
   const [dirty, setDirty]       = useState(false)
   const [saving, setSaving]     = useState(false)
   const fileRef = useRef()
+
+  // Sync form when clinica loads asynchronously (e.g. after Supabase fetch in ClinicProvider)
+  useEffect(() => {
+    if (!clinica) return
+    setForm({
+      nombre:    clinica.nombre    ?? '',
+      slug:      clinica.slug      ?? '',
+      direccion: clinica.direccion ?? '',
+      ciudad:    clinica.ciudad    ?? '',
+      telefono:  clinica.telefono  ?? '',
+      email:     clinica.email     ?? '',
+      web:       clinica.web       ?? '',
+      horario:   clinica.horario   ?? '',
+    })
+    setColor(clinica.color_primario ?? '#C8A882')
+    setLogoPreview(clinica.logo_url ?? null)
+    setDirty(false)
+  }, [clinica?.id])
 
   function setField(k, v) {
     setForm(f => ({ ...f, [k]: v }))
@@ -389,7 +408,7 @@ function SecCatalogo({ clinica, brand, showToast }) {
             <div className="w-3 h-10 rounded-full flex-shrink-0" style={{ backgroundColor: t.color ?? brand }} />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-gray-800 truncate">{t.nombre}</p>
-              <p className="text-xs text-gray-400">{t.duracion_minutos} min · {t.precio ? `${t.precio} €` : 'Sin precio'}</p>
+              <p className="text-xs text-gray-400">{t.duracion_minutos} min · {t.precio ? formatPrecio(t.precio) : 'Sin precio'}</p>
             </div>
             <button onClick={() => toggleActivo(t)} className="flex-shrink-0">
               {t.activo
@@ -495,6 +514,14 @@ function SecNotificaciones({ clinica, brand, onSave }) {
   const [wapp, setWapp]       = useState(clinica?.whatsapp_numero ?? '')
   const [dirty, setDirty]     = useState(false)
   const [saving, setSaving]   = useState(false)
+
+  // Sync when clinica loads asynchronously
+  useEffect(() => {
+    if (!clinica) return
+    setToggles({ ...NOTIF_DEFAULTS, ...(clinica.notificaciones ?? {}) })
+    setWapp(clinica.whatsapp_numero ?? '')
+    setDirty(false)
+  }, [clinica?.id])
 
   function setToggle(k) {
     setToggles(t => ({ ...t, [k]: !t[k] }))

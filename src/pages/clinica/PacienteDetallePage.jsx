@@ -7,6 +7,7 @@ import ClinicLayout from './ClinicLayout'
 import PACIENTES, { SESIONES_DB, ANALISIS_DB } from '../../data/pacientes'
 import { supabase } from '../../lib/supabase'
 import NuevaSesionDrawer from '../../components/NuevaSesionDrawer'
+import { formatFecha } from '../../utils/fecha'
 
 const RIESGO_STYLE = {
   bajo:     { bg: '#dcfce7', text: '#15803d' },
@@ -268,7 +269,7 @@ export default function PacienteDetallePage() {
                       </span>
                     )
                   },
-                  { label: 'Paciente desde', value: paciente.creado_en ?? '—' },
+                  { label: 'Paciente desde', value: formatFecha(paciente.creado_en) },
                 ].map(({ label, value }) => (
                   <div key={label} className="flex items-start justify-between gap-3">
                     <span className="text-gray-400 text-xs flex-shrink-0">{label}</span>

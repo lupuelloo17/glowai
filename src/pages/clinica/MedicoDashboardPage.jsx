@@ -8,6 +8,7 @@ import FeatureGate from '../../components/FeatureGate'
 import ClinicLayout from './ClinicLayout'
 import { fTime } from '../../services/recordatorios'
 import { supabase } from '../../lib/supabase'
+import { formatFecha } from '../../utils/fecha'
 
 const RIESGO_STYLE = {
   bajo:     { bg: '#dcfce7', text: '#15803d' },
@@ -58,7 +59,7 @@ export default function MedicoDashboardPage() {
           nombre:        `${p.nombre} ${p.apellido}`,
           foto:          p.foto_perfil ?? null,
           sesiones:      p.total_visitas ?? 0,
-          ultima_sesion: p.ultima_visita ?? '—',
+          ultima_sesion: formatFecha(p.ultima_visita),
           riesgo:        p.riesgo ?? 'bajo',
         })))
       })

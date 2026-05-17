@@ -6,6 +6,7 @@ import ClinicLayout from './ClinicLayout'
 import NuevoPacienteDrawer from '../../components/NuevoPacienteDrawer'
 import PACIENTES from '../../data/pacientes'
 import { supabase } from '../../lib/supabase'
+import { formatFecha } from '../../utils/fecha'
 
 const RIESGO_STYLE = {
   bajo:     { bg: '#dcfce7', text: '#15803d' },
@@ -151,7 +152,7 @@ export default function PacientesPage() {
                   <p className="text-gray-400 text-xs truncate">
                     {p.tipo_piel ? `Piel ${p.tipo_piel.toLowerCase()} · ` : ''}{p.total_visitas} visitas
                   </p>
-                  <p className="text-gray-300 text-[10px] mt-0.5">Última: {p.ultima_visita}</p>
+                  <p className="text-gray-300 text-[10px] mt-0.5">Última: {formatFecha(p.ultima_visita)}</p>
                 </div>
                 <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
                   <span
