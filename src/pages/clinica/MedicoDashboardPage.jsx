@@ -23,15 +23,18 @@ export default function MedicoDashboardPage() {
   const { citas } = useCitas()
   const brand = clinica?.color_primario ?? '#C8A882'
 
-  const today = new Date()
+  const todayDate = new Date()
+  const today = todayDate.toLocaleDateString('es-ES', {
+    weekday: 'long', day: 'numeric', month: 'long',
+  })
 
   const citasHoy = useMemo(() =>
     citas
       .filter(c => {
         const f = c.fecha instanceof Date ? c.fecha : new Date(c.fecha)
-        return f.getFullYear() === today.getFullYear() &&
-               f.getMonth()    === today.getMonth()    &&
-               f.getDate()     === today.getDate()
+        return f.getFullYear() === todayDate.getFullYear() &&
+               f.getMonth()    === todayDate.getMonth()    &&
+               f.getDate()     === todayDate.getDate()
       })
       .sort((a, b) => {
         const fa = a.fecha instanceof Date ? a.fecha : new Date(a.fecha)
@@ -65,10 +68,6 @@ export default function MedicoDashboardPage() {
     await logout()
     navigate('/login', { replace: true })
   }
-
-  const today = new Date().toLocaleDateString('es-ES', {
-    weekday: 'long', day: 'numeric', month: 'long',
-  })
 
   return (
     <ClinicLayout>
