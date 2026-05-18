@@ -19,6 +19,9 @@ import RegistroPacientePage  from './pages/RegistroPacientePage'
 import PoliticaPrivacidadPage from './pages/PoliticaPrivacidadPage'
 import PreciosPage            from './pages/PreciosPage'
 import PagoExitosoPage        from './pages/PagoExitosoPage'
+import ResetPasswordPage      from './pages/ResetPasswordPage'
+import NuevaContrasenaPage    from './pages/NuevaContrasenaPage'
+import RegistroClinicaPage    from './pages/RegistroClinicaPage'
 
 // Clinic (multi-tenant)
 import { ClinicProvider }       from './contexts/ClinicContext'
@@ -35,6 +38,9 @@ import ConfiguracionPage        from './pages/clinica/ConfiguracionPage'
 import MiPerfilPage             from './pages/clinica/MiPerfilPage'
 import MisAnalisisPage          from './pages/clinica/MisAnalisisPage'
 import ClinicLayout             from './pages/clinica/ClinicLayout'
+import { EvolucionPageStandalone } from './pages/clinica/EvolucionPage'
+import ChatPacientePage         from './pages/clinica/ChatPacientePage'
+import ConversacionesPage       from './pages/clinica/ConversacionesPage'
 
 // Wrapper que renderiza DermoscopiaPage dentro del ClinicLayout del paciente.
 // Así el paciente ve el bottom nav del portal (Inicio/Análisis/Citas/Datos)
@@ -127,9 +133,14 @@ function ClinicRoutes() {
           <Route path="configuracion" element={<RequireRole roles={['admin']}><ConfiguracionPage /></RequireRole>} />
 
           {/* ── Paciente ── */}
-          <Route path="mi-perfil"        element={<RequireRole roles={['paciente']}><MiPerfilPage /></RequireRole>} />
-          <Route path="mi-perfil/citas"  element={<RequireRole roles={['paciente']}><MisCitasPacientePage /></RequireRole>} />
-          <Route path="dermoscopia"      element={<RequireRole roles={['paciente']}><DermoscopiaWrapper /></RequireRole>} />
+          <Route path="mi-perfil"              element={<RequireRole roles={['paciente']}><MiPerfilPage /></RequireRole>} />
+          <Route path="mi-perfil/citas"        element={<RequireRole roles={['paciente']}><MisCitasPacientePage /></RequireRole>} />
+          <Route path="mi-perfil/evolucion"    element={<RequireRole roles={['paciente']}><EvolucionPageStandalone /></RequireRole>} />
+          <Route path="mi-perfil/chat"         element={<RequireRole roles={['paciente']}><ChatPacientePage /></RequireRole>} />
+          <Route path="dermoscopia"            element={<RequireRole roles={['paciente']}><DermoscopiaWrapper /></RequireRole>} />
+
+          {/* ── Conversaciones staff ── */}
+          <Route path="conversaciones"         element={<RequireRole roles={['admin','medico','recepcion']}><ConversacionesPage /></RequireRole>} />
 
           {/* ── /analisis: distinto componente por rol ── */}
           <Route path="analisis"      element={<AnalisisPorRol />} />
@@ -194,8 +205,11 @@ export default function App() {
           <Route path="/dermoscopia" element={<DermoscopiaRedirect />} />
 
           {/* ── Login / Demo ── */}
-          <Route path="/login" element={<PatientShell><LoginPage /></PatientShell>} />
-          <Route path="/demo"  element={<PatientShell><DemoPage /></PatientShell>} />
+          <Route path="/login"             element={<PatientShell><LoginPage /></PatientShell>} />
+          <Route path="/demo"              element={<PatientShell><DemoPage /></PatientShell>} />
+          <Route path="/reset-password"    element={<PatientShell><ResetPasswordPage /></PatientShell>} />
+          <Route path="/nueva-contrasena"  element={<PatientShell><NuevaContrasenaPage /></PatientShell>} />
+          <Route path="/registro-clinica"  element={<PatientShell><RegistroClinicaPage /></PatientShell>} />
 
           {/* ── Clinic dashboard (protected) ── */}
           <Route

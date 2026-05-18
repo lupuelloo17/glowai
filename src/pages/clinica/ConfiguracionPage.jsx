@@ -731,7 +731,6 @@ export default function ConfiguracionPage() {
       console.log('[handleSaveClinica] resultado:', { data, error })
       if (error) { showToast('Error al guardar: ' + error.message, 'error'); return }
       setClinica(data)
-      await refreshClinica()
       showToast('Cambios guardados correctamente ✓')
     } else {
       setClinica(prev => ({ ...prev, ...fields }))

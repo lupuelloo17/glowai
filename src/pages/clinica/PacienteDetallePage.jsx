@@ -8,6 +8,7 @@ import PACIENTES, { SESIONES_DB, ANALISIS_DB } from '../../data/pacientes'
 import { supabase } from '../../lib/supabase'
 import NuevaSesionDrawer from '../../components/NuevaSesionDrawer'
 import { formatFecha } from '../../utils/fecha'
+import EvolucionPage from './EvolucionPage'
 
 const RIESGO_STYLE = {
   bajo:     { bg: '#dcfce7', text: '#15803d' },
@@ -15,7 +16,7 @@ const RIESGO_STYLE = {
   alto:     { bg: '#fee2e2', text: '#b91c1c' },
 }
 
-const TABS = ['Información', 'Sesiones', 'Análisis']
+const TABS = ['Información', 'Sesiones', 'Análisis', 'Evolución']
 
 export default function PacienteDetallePage() {
   const navigate     = useNavigate()
@@ -322,6 +323,14 @@ export default function PacienteDetallePage() {
                 + Nueva sesión
               </button>
             </div>
+          )}
+
+          {/* ── Tab 3: Evolución (fotos antes/después) ── */}
+          {tab === 3 && (
+            <EvolucionPage
+              pacienteIdProp={id}
+              readOnly={false}
+            />
           )}
 
           {/* ── Tab 2: Análisis ── */}
