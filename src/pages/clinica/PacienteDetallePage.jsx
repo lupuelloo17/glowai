@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Phone, Mail, AlertCircle, BellOff } from 'lucide-react'
+import { ArrowLeft, Phone, Mail, AlertCircle, BellOff, MessageCircle, Send, X } from 'lucide-react'
 import { useClinic } from '../../contexts/ClinicContext'
+import { useAuth } from '../../contexts/AuthContext'
 import FeatureGate from '../../components/FeatureGate'
 import ClinicLayout from './ClinicLayout'
 import PACIENTES, { SESIONES_DB, ANALISIS_DB } from '../../data/pacientes'
@@ -23,6 +24,7 @@ export default function PacienteDetallePage() {
   // ── FIX 1: leer `id` de la URL ──────────────────────────────────────────
   const { slug, id } = useParams()
   const { clinica }  = useClinic()
+  const { user }     = useAuth()
   const brand        = clinica?.color_primario ?? '#C8A882'
 
   const [tab,      setTab]      = useState(0)
@@ -31,6 +33,35 @@ export default function PacienteDetallePage() {
   const [analisis, setAnalisis] = useState([])
   const [cargando, setCargando] = useState(true)
   const [nuevaSesionAbierta, setNuevaSesionAbierta] = useState(false)
+  const [msgDrawer,    setMsgDrawer]    = useState(false)
+  const [msgTexto,     setMsgTexto]     = useState('')
+  const [enviandoMsg,  setEnviandoMsg]  = useState(false)
+  const [msgEnviado,   setMsgEnviado]   = useState(false)
+
+  async function handleEnviarMensaje() {
+    const texto = msgTexto.trim()
+    if (!texto || enviandoMsg) return
+    setEnviandoMsg(true)
+    try {
+      if (supabase && clinica?.id && !clinica._isMock && paciente?.id) {
+        const { error } = await supabase.from('mensajes').insert({
+          clinica_id:      clinica.id,
+          remitente_id:    user.id,
+          destinatario_id: paciente.id,
+          contenido:       texto,
+          tipo:            'texto',
+        })
+        if (error) throw error
+      }
+      setMsgTexto('')
+      setMsgEnviado(true)
+      setTimeout(() => { setMsgEnviado(false); setMsgDrawer(false) }, 1200)
+    } catch (err) {
+      alert('Error al enviar: ' + err.message)
+    } finally {
+      setEnviandoMsg(false)
+    }
+  }
 
   useEffect(() => {
     // ── BUG FIX A: reset state immediately when id changes ───────────
@@ -147,6 +178,14 @@ export default function PacienteDetallePage() {
                 {paciente.edad ? `${paciente.edad} años · ` : ''}{paciente.medico ?? 'Dra. García'}
               </p>
             </div>
+            {/* Botón Mensaje */}
+            <button
+              onClick={() => setMsgDrawer(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-white flex-shrink-0 transition-all active:scale-95"
+              style={{ backgroundColor: brand }}
+            >
+              <MessageCircle size={13} /> Mensaje
+            </button>
             {/* Marketing badge */}
             {!paciente.marketing_aceptado && (
               <div
@@ -383,6 +422,51 @@ export default function PacienteDetallePage() {
           )}
         </div>
       </div>
+
+      {/* ── Drawer: enviar mensaje ── */}
+      {msgDrawer && (
+        <div className="fixed inset-0 z-40 flex flex-col justify-end" onClick={() => setMsgDrawer(false)}>
+          <div
+            className="bg-white rounded-t-3xl px-5 pt-5 pb-8 shadow-2xl"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-gray-900 text-base">
+                Mensaje a {paciente.nombre}
+              </h3>
+              <button onClick={() => setMsgDrawer(false)} className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
+                <X size={16} className="text-gray-500" />
+              </button>
+            </div>
+            {msgEnviado ? (
+              <div className="py-6 flex flex-col items-center gap-2">
+                <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
+                  <MessageCircle size={22} style={{ color: brand }} />
+                </div>
+                <p className="text-gray-700 font-semibold text-sm">Mensaje enviado</p>
+              </div>
+            ) : (
+              <>
+                <textarea
+                  value={msgTexto}
+                  onChange={e => setMsgTexto(e.target.value)}
+                  placeholder={`Escribe un mensaje para ${paciente.nombre}…`}
+                  rows={4}
+                  className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm text-gray-800 outline-none resize-none focus:border-gray-400 transition-colors mb-3"
+                />
+                <button
+                  onClick={handleEnviarMensaje}
+                  disabled={!msgTexto.trim() || enviandoMsg}
+                  className="w-full py-3 rounded-2xl text-white text-sm font-semibold flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-40"
+                  style={{ backgroundColor: brand }}
+                >
+                  <Send size={15} /> {enviandoMsg ? 'Enviando…' : 'Enviar mensaje'}
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {nuevaSesionAbierta && (
         <NuevaSesionDrawer

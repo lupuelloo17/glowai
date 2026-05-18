@@ -36,8 +36,16 @@ export default function ClinicNav() {
           .eq('leido', false)
           .neq('remitente_id', user.id)
         if (!cancelled) setUnread(count ?? 0)
+      } else if (isMedico) {
+        // Médico: solo mensajes dirigidos a él específicamente
+        const { count } = await supabase
+          .from('mensajes')
+          .select('id', { count: 'exact', head: true })
+          .eq('destinatario_usuario_id', user.id)
+          .eq('leido', false)
+        if (!cancelled) setUnread(count ?? 0)
       } else {
-        // Staff: mensajes de pacientes no leídos en su clínica
+        // Admin/recepcion: todos los no leídos de la clínica
         const { count } = await supabase
           .from('mensajes')
           .select('id', { count: 'exact', head: true })

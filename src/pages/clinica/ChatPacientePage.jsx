@@ -191,11 +191,12 @@ export default function ChatPacientePage() {
       const { data, error } = await supabase
         .from('mensajes')
         .insert({
-          clinica_id:      user.clinica_id,
-          remitente_id:    user.id,
-          destinatario_id: user.id,
-          contenido:       msg,
-          tipo:            'texto',
+          clinica_id:             user.clinica_id,
+          remitente_id:           user.id,
+          destinatario_id:        user.id,
+          destinatario_usuario_id: medico?.id ?? null,
+          contenido:              msg,
+          tipo:                   'texto',
         })
         .select()
         .single()

@@ -118,11 +118,22 @@ export default function ConversacionesPage() {
       setCargandoLista(false)
       return
     }
-    const { data: msgs } = await supabase
+
+    // Médico: solo sus propias conversaciones (mensajes enviados o recibidos por él)
+    // Admin/recepcion: todas las conversaciones de la clínica
+    const isMedico = user?.rol === 'medico'
+    let query = supabase
       .from('mensajes')
       .select('destinatario_id, contenido, creado_en, remitente_id, leido, pacientes(nombre,apellido,foto_perfil)')
-      .eq('clinica_id', user.clinica_id)
       .order('creado_en', { ascending: false })
+
+    if (isMedico) {
+      query = query.or(`remitente_id.eq.${user.id},destinatario_usuario_id.eq.${user.id}`)
+    } else {
+      query = query.eq('clinica_id', user.clinica_id)
+    }
+
+    const { data: msgs } = await query
 
     if (!msgs) { setCargandoLista(false); return }
 
@@ -173,8 +184,10 @@ export default function ConversacionesPage() {
     setMensajes(data ?? [])
     setCargandoChat(false)
 
-    // Marcar como leídos (mensajes del paciente que el staff no ha leído)
-    const noLeidos = (data ?? []).filter(m => m.remitente_id === pacienteId && !m.leido)
+    // Marcar como leídos (mensajes del paciente dirigidos a este usuario)
+    const noLeidos = (data ?? []).filter(m =>
+      !m.leido && m.remitente_id !== user.id
+    )
     if (noLeidos.length > 0) {
       await supabase
         .from('mensajes')
